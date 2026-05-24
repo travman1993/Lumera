@@ -3,6 +3,10 @@ import MainLayout from "./layouts/MainLayout"
 import Home from "./pages/Home"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
+import FilmDetail from "./pages/FilmDetail"
+import CreatorProfile from "./pages/CreatorProfile"
+import Upload from "./pages/Upload"
+import Dashboard from "./pages/Dashboard"
 import NotFound from "./pages/NotFound"
 
 export default function App() {
@@ -12,6 +16,11 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/film/:id" element={<FilmDetail />} />
+        <Route path="/creator/:id" element={<CreatorProfile />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/upload/:id" element={<Upload />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

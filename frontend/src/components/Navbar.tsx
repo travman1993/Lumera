@@ -20,11 +20,16 @@ export default function Navbar() {
 
                 <div className="flex items-center gap-6">
                     <Link to="/" className="text-sm text-lumera-muted hover:text-white transition-colors">Browse</Link>
-                    <Link to="/" className="text-sm text-lumera-muted hover:text-white transition-colors">Creators</Link>
 
-                    {/* Show username + logout if logged in, Sign In if not */}
+                    {/* Show authenticated nav items */}
                     {token && username ? (
                         <div className="flex items-center gap-4">
+                            <Link
+                                to="/dashboard"
+                                className="text-sm text-lumera-muted hover:text-white transition-colors"
+                            >
+                                Dashboard
+                            </Link>
                             <span className="text-sm text-lumera-gold">{username}</span>
                             <button
                                 onClick={handleLogout}

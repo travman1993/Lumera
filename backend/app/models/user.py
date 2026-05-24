@@ -31,6 +31,9 @@ class User(Base):
     # Account Active or not
     is_active = Column(Boolean, default=True)
 
+    # Creator account flag — set True when user creates a creator profile
+    is_creator = Column(Boolean, default=False)
+
     # Auto timestamp
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
