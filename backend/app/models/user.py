@@ -23,7 +23,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
 
     # Hash version of password
-    hash_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)
 
     # Verified email
     is_verified = Column(Boolean, default=False)

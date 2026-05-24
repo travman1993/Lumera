@@ -12,7 +12,7 @@ export default function Navbar() {
                     <Link to="/" className="text-sm text-lumera-muted hover:text-white transition-colors">Browse</Link>
                     <Link to="/" className="text-sm text-lumera-muted hover:text-white transition-colors">Creators</Link>
                     {/* Sign in different to stand out */}
-                    <Link to="/" className="text-sm px-4 py-2 border border-lumera-gold text-lumera-gold rounded hover:bg-lumera-gold hover:text-black transition-all">Sign In</Link>
+                    <Link to="/login" className="text-sm px-4 py-2 border border-lumera-gold text-lumera-gold rounded hover:bg-lumera-gold hover:text-black transition-all">Sign In</Link>
                 </div>
             </div>
         </nav>
