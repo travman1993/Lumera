@@ -1,0 +1,19 @@
+# Virtual environment — never commit this, it's huge and machine-specific
+venv/
+
+# Environment variables — contains secrets, never commit
+.env
+
+# Python bytecode — auto-generated files Python creates when it runs your code
+__pycache__/
+*.pyc
+*.pyo
+
+# Alembic migration temp files
+*.pyc
+
+# macOS system file — created automatically by Finder, not needed in the repo
+.DS_Store
+
+# VS Code settings — optional, remove this line if you want to share VS Code config
+.vscode/
