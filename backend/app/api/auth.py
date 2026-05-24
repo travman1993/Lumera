@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.db import get_db
@@ -6,10 +7,13 @@ from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.services.user_service import (
     get_user_by_email,
     get_user_by_username,
+    get_user_by_id,
     create_user,
     verify_password
 )
-from app.auth.jwt import create_access_token
+from app.auth.jwt import create_access_token, verify_token
+
+security = HTTPBearer()
 
 # APIRouter groups related routes together.
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -59,3 +63,18 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
     access_token = create_access_token(data={"sub": str(user.id)})
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+):
+    user_id = verify_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user

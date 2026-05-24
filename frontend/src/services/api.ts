@@ -74,3 +74,24 @@ throw new Error(error.detail || "Login failed")
 
 return response.json()
 }
+
+export function saveUsername(username: string) {
+  localStorage.setItem("lumera_username", username)
+}
+
+export function getUsername(): string | null {
+  return localStorage.getItem("lumera_username")
+}
+
+export function removeUsername() {
+  localStorage.removeItem("lumera_username")
+}
+
+export async function getCurrentUser(): Promise<UserResponse> {
+  const token = getToken()
+  const response = await fetch(`${BASE_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!response.ok) throw new Error("Not authenticated")
+  return response.json()
+}

@@ -1,4 +1,5 @@
 import bcrypt
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -34,3 +35,7 @@ async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
     await db.commit()
     await db.refresh(new_user)
     return new_user
+
+async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.id == UUID(user_id)))
+    return result.scalar_one_or_none()
