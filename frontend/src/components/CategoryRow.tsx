@@ -12,6 +12,12 @@ const placeholderFilms = [
     { title: "Velocity", category: "Sports", duration: "8 min"},
     { title: "Fade In", category: "Short Film", duration: "15 min"},
     { title: "Chroma", category: "Music Video", duration: "4 min"},
+    { title: "Golden Hour", category: "Short Film", duration: "12 min"},
+    { title: "Neon Drift", category: "Commercial", duration: "3 min"},
+    { title: "The Last Frame", category: "Documentary", duration: "28 min"},
+    { title: "Velocity", category: "Sports", duration: "8 min"},
+    { title: "Fade In", category: "Short Film", duration: "15 min"},
+    { title: "Chroma", category: "Music Video", duration: "4 min"},
 ]
 
 export default function CategoryRow({title}: CategoryRowProps) {
@@ -19,12 +25,14 @@ export default function CategoryRow({title}: CategoryRowProps) {
         <div className="mb-10">
 
             {/* Row Heading */}
-            <h2 className="text-white text-xl font-semibold mb-4 px-6">
+            <h2 className="text-white text-xl font-semibold mb-5 px-16">
                 {title}
             </h2>
 
             {/* Horizontal scrolling on overflow */}
-            <div className="flex gap-4 overflow-x-auto px6 pb-4">
+            <div className="flex gap-6 overflow-x-auto pb-4 py-4 scrollbar-hide">
+                {/* Space left */}
+                <div className="w-10 flex-shrink-0"/>
                 {placeholderFilms.map((film, index) => (
                     // Required key
                     <FilmCard
@@ -35,7 +43,7 @@ export default function CategoryRow({title}: CategoryRowProps) {
                     />
                 ))}
             </div>
-            
+
         </div>
     )
 }
