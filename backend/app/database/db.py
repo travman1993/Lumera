@@ -1,10 +1,15 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-# Load variables from env
+# load_dotenv() is called first before any os.getenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env")
+
+# Now os.getenv works because the .env is already loaded
 DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 # Create Async Engine
 engine = create_async_engine(DATABASE_URL, echo=True)
