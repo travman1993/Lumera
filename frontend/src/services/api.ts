@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:8000"
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"
 
 // ─── Auth types ────────────────────────────────────────────────────────────
 
@@ -195,6 +195,17 @@ export async function likeFilm(id: string): Promise<{ likes_count: number }> {
   const res = await fetch(`${BASE_URL}/films/${id}/like`, { method: "POST" })
   if (!res.ok) throw new Error("Failed to like film")
   return res.json()
+}
+
+export async function reportFilm(id: string, reason: string, details?: string): Promise<void> {
+  const body = new FormData()
+  body.append("reason", reason)
+  if (details) body.append("details", details)
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers["Authorization"] = `Bearer ${token}`
+  const res = await fetch(`${BASE_URL}/films/${id}/report`, { method: "POST", headers, body })
+  if (!res.ok) throw new Error("Failed to submit report")
 }
 
 export async function uploadFilm(formData: FormData): Promise<Film> {

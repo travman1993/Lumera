@@ -13,22 +13,31 @@ from app.schemas.creator import CreatorProfileUpdate, CreatorProfileResponse, Cr
 from app.services.creator_service import get_profile_by_user_id, upsert_creator_profile
 from app.services.user_service import get_user_by_id
 from app.services.film_service import get_films_by_creator
+from app.services import storage_service
 from app.auth.jwt import verify_token
 
 security = HTTPBearer()
 
 AVATAR_DIR = Path("uploads") / "avatars"
+ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_AVATAR_BYTES = 5 * 1024 * 1024  # 5 MB
 
 router = APIRouter(prefix="/creators", tags=["creators"])
 
 
 async def _save_avatar(file: UploadFile) -> str:
+    if file.content_type not in ALLOWED_AVATAR_TYPES:
+        raise HTTPException(status_code=415, detail="Avatar must be a JPEG, PNG, or WebP image.")
+    content = await file.read()
+    if len(content) > MAX_AVATAR_BYTES:
+        raise HTTPException(status_code=413, detail="Avatar too large. Max 5 MB.")
+    if storage_service.cloudflare_ready():
+        return await storage_service.upload_image(content, file.content_type)
+    # Local fallback for development
     os.makedirs(AVATAR_DIR, exist_ok=True)
     ext = Path(file.filename or "avatar.jpg").suffix or ".jpg"
     filename = f"{uuid.uuid4()}{ext}"
-    path = AVATAR_DIR / filename
-    async with aiofiles.open(path, "wb") as f:
-        content = await file.read()
+    async with aiofiles.open(AVATAR_DIR / filename, "wb") as f:
         await f.write(content)
     return f"/uploads/avatars/{filename}"
 

@@ -24,6 +24,8 @@ from app.services.film_service import (
 )
 from app.services.user_service import get_user_by_id
 from app.auth.jwt import verify_token
+from app.models.film_report import FilmReport
+from app.services import storage_service
 
 security = HTTPBearer()
 optional_security = HTTPBearer(auto_error=False)
@@ -32,18 +34,46 @@ UPLOAD_DIR = Path("uploads")
 THUMBNAIL_DIR = UPLOAD_DIR / "thumbnails"
 VIDEO_DIR = UPLOAD_DIR / "videos"
 
+MAX_IMAGE_BYTES = 10 * 1024 * 1024        # 10 MB
+MAX_VIDEO_BYTES = 500 * 1024 * 1024       # 500 MB via backend proxy; use direct upload for larger
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"}
+
 router = APIRouter(prefix="/films", tags=["films"])
 
 
-async def _save_upload(file: UploadFile, directory: Path) -> str:
-    os.makedirs(directory, exist_ok=True)
+async def _handle_image_upload(file: UploadFile, local_dir: Path) -> str:
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail=f"Unsupported image type '{file.content_type}'.")
+    content = await file.read()
+    if len(content) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image too large. Max 10 MB.")
+    if storage_service.cloudflare_ready():
+        return await storage_service.upload_image(content, file.content_type)
+    # Local fallback for development
+    os.makedirs(local_dir, exist_ok=True)
     ext = Path(file.filename).suffix
     filename = f"{uuid.uuid4()}{ext}"
-    path = directory / filename
-    async with aiofiles.open(path, "wb") as f:
-        content = await file.read()
+    async with aiofiles.open(local_dir / filename, "wb") as f:
         await f.write(content)
-    return f"/uploads/{directory.name}/{filename}"
+    return f"/uploads/{local_dir.name}/{filename}"
+
+
+async def _handle_video_upload(file: UploadFile) -> str:
+    if file.content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=415, detail=f"Unsupported video type '{file.content_type}'.")
+    content = await file.read()
+    if len(content) > MAX_VIDEO_BYTES:
+        raise HTTPException(status_code=413, detail="Video too large. Max 500 MB via upload form.")
+    if storage_service.cloudflare_ready():
+        return await storage_service.upload_video(content, file.filename or "video.mp4")
+    # Local fallback for development
+    os.makedirs(VIDEO_DIR, exist_ok=True)
+    ext = Path(file.filename).suffix
+    filename = f"{uuid.uuid4()}{ext}"
+    async with aiofiles.open(VIDEO_DIR / filename, "wb") as f:
+        await f.write(content)
+    return f"/uploads/videos/{filename}"
 
 
 # --- Public list routes ---
@@ -92,6 +122,36 @@ async def like_film(film_id: UUID, db: AsyncSession = Depends(get_db)):
     return {"likes_count": film.likes_count}
 
 
+# --- Report ---
+
+REPORT_REASONS = {"inappropriate", "spam", "copyright", "wrong_category", "other"}
+
+@router.post("/{film_id}/report", status_code=201)
+async def report_film(
+    film_id: UUID,
+    reason: str = Form(...),
+    details: str = Form(None),
+    credentials: HTTPAuthorizationCredentials = Depends(optional_security),
+    db: AsyncSession = Depends(get_db),
+):
+    film = await get_film_by_id(db, film_id)
+    if not film:
+        raise HTTPException(status_code=404, detail="Film not found")
+    if reason not in REPORT_REASONS:
+        raise HTTPException(status_code=422, detail=f"Invalid reason. Choose from: {', '.join(REPORT_REASONS)}")
+
+    reporter_id = None
+    if credentials:
+        user_id_str = verify_token(credentials.credentials)
+        if user_id_str:
+            reporter_id = UUID(user_id_str)
+
+    report = FilmReport(film_id=film_id, reporter_id=reporter_id, reason=reason, details=details)
+    db.add(report)
+    await db.commit()
+    return {"message": "Report submitted. Thank you."}
+
+
 # --- Creator-only routes ---
 
 @router.post("", response_model=FilmResponse, status_code=201)
@@ -124,9 +184,9 @@ async def upload_film(
         user.is_creator = True
         await db.commit()
 
-    thumbnail_url = await _save_upload(thumbnail, THUMBNAIL_DIR) if thumbnail and thumbnail.filename else None
-    cover_url = await _save_upload(cover, THUMBNAIL_DIR.parent / "covers") if cover and cover.filename else None
-    video_url = await _save_upload(video, VIDEO_DIR) if video and video.filename else None
+    thumbnail_url = await _handle_image_upload(thumbnail, THUMBNAIL_DIR) if thumbnail and thumbnail.filename else None
+    cover_url = await _handle_image_upload(cover, THUMBNAIL_DIR.parent / "covers") if cover and cover.filename else None
+    video_url = await _handle_video_upload(video) if video and video.filename else None
 
     film = await create_film(
         db=db,

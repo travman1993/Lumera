@@ -34,6 +34,9 @@ class User(Base):
     # Creator account flag — set True when user creates a creator profile
     is_creator = Column(Boolean, default=False)
 
+    # Admin flag — set manually in the DB for site owners
+    is_admin = Column(Boolean, default=False)
+
     # Auto timestamp
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

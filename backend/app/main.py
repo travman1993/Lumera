@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +9,8 @@ from app.database.db import engine, Base, AsyncSessionLocal
 
 # Models are registered with Base automatically when the routers/services
 # import them, so no explicit model imports are needed here.
-from app.api import auth, categories, creators, films
+from app.api import auth, categories, creators, films, admin
+from app.models.film_report import FilmReport  # noqa: F401 — ensures table is created
 from app.services.category_service import seed_categories
 
 UPLOAD_DIR = Path("uploads")
@@ -39,9 +41,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+allowed_origins = [o.strip() for o in _origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +60,7 @@ app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(creators.router)
 app.include_router(films.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

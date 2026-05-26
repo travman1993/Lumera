@@ -11,3 +11,5 @@ python-dotenv
 psycopg2-binary
 greenlet
 aiofiles
+boto3
+httpx
