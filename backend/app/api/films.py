@@ -98,8 +98,8 @@ async def my_films(
 
 
 @router.get("/category/{slug}", response_model=list[FilmResponse])
-async def films_by_category(slug: str, db: AsyncSession = Depends(get_db)):
-    return await get_films_by_category(db, slug)
+async def films_by_category(slug: str, limit: int | None = None, db: AsyncSession = Depends(get_db)):
+    return await get_films_by_category(db, slug, limit=limit)
 
 
 @router.get("/{film_id}", response_model=FilmResponse)

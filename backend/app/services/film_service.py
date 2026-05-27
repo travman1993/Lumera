@@ -2,7 +2,7 @@ import re
 import json
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.models.film import Film
 from app.models.category import Category
@@ -65,17 +65,21 @@ async def get_all_films(db: AsyncSession) -> list[FilmResponse]:
     return [await _build_film_response(db, f) for f in films]
 
 
-async def get_films_by_category(db: AsyncSession, slug: str) -> list[FilmResponse]:
+async def get_films_by_category(db: AsyncSession, slug: str, limit: int | None = None) -> list[FilmResponse]:
     cat_result = await db.execute(select(Category).where(Category.slug == slug))
     category = cat_result.scalar_one_or_none()
     if not category:
         return []
 
-    result = await db.execute(
+    query = (
         select(Film)
         .where(Film.category_id == category.id, Film.is_published == True)
-        .order_by(Film.created_at.desc())
+        .order_by(func.random())
     )
+    if limit:
+        query = query.limit(limit)
+
+    result = await db.execute(query)
     films = result.scalars().all()
     return [await _build_film_response(db, f) for f in films]
 

@@ -179,8 +179,11 @@ export async function getFilms(): Promise<Film[]> {
   return res.json()
 }
 
-export async function getFilmsByCategory(slug: string): Promise<Film[]> {
-  const res = await fetch(`${BASE_URL}/films/category/${slug}`)
+export async function getFilmsByCategory(slug: string, limit?: number): Promise<Film[]> {
+  const url = limit
+    ? `${BASE_URL}/films/category/${slug}?limit=${limit}`
+    : `${BASE_URL}/films/category/${slug}`
+  const res = await fetch(url)
   if (!res.ok) throw new Error("Failed to load films")
   return res.json()
 }
