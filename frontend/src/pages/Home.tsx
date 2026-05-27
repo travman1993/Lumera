@@ -3,12 +3,37 @@ import CategoryRow from "../components/CategoryRow"
 import { type Category, getCategories } from "../services/api"
 import heroPlaceholder from "../assets/hero-placeholder.png"
 
+// Defines the psychological hierarchy of category rows on the home page.
+// CategoryRow hides itself automatically if the category has no films yet.
+const CATEGORY_ORDER = [
+  "short-films",
+  "sports",
+  "commercials",
+  "documentaries",
+  "music-videos",
+  "experimental",
+  "fashion",
+  "animation",
+]
+
+function sortCategories(categories: Category[]): Category[] {
+  return [...categories].sort((a, b) => {
+    const ai = CATEGORY_ORDER.indexOf(a.slug)
+    const bi = CATEGORY_ORDER.indexOf(b.slug)
+    // Known categories follow the defined order; unknown ones go to the end
+    if (ai === -1 && bi === -1) return a.name.localeCompare(b.name)
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+}
+
 export default function Home() {
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
     getCategories()
-      .then(setCategories)
+      .then((data) => setCategories(sortCategories(data)))
       .catch(() => setCategories([]))
   }, [])
 
@@ -33,7 +58,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Category rows — only renders rows that have published films */}
+      {/* Category rows — ordered by hierarchy, hidden automatically if empty */}
       <div className="mt-10">
         {categories.map((cat) => (
           <CategoryRow key={cat.id} title={cat.name} slug={cat.slug} />
