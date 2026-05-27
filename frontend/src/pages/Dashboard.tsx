@@ -198,7 +198,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 md:gap-4 mb-10">
           {[
             { label: "Films", value: films.length },
             { label: "Total Views", value: totalViews.toLocaleString() },
@@ -206,9 +206,9 @@ export default function Dashboard() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="bg-lumera-surface border border-lumera-border rounded-xl p-5 text-center"
+              className="bg-lumera-surface border border-lumera-border rounded-xl p-4 md:p-5 text-center"
             >
-              <p className="text-3xl font-bold text-white">{stat.value}</p>
+              <p className="text-2xl md:text-3xl font-bold text-white">{stat.value}</p>
               <p className="text-lumera-muted text-xs mt-1">{stat.label}</p>
             </div>
           ))}
@@ -515,62 +515,42 @@ export default function Dashboard() {
                     return (
                       <div
                         key={film.id}
-                        className="flex items-center gap-4 p-3 bg-lumera-dark border border-lumera-border rounded-lg"
+                        className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-lumera-dark border border-lumera-border rounded-lg"
                       >
-                        {/* Thumbnail */}
-                        <div className="w-20 h-14 rounded flex-shrink-0 overflow-hidden bg-lumera-border">
-                          {thumb ? (
-                            <img
-                              src={thumb}
-                              alt={film.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full" />
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-medium truncate">
-                            {film.title}
-                          </p>
-                          <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-lumera-muted text-xs">
-                              {film.category_name}
-                            </span>
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${
+                        {/* Thumbnail + info row */}
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-20 h-14 rounded flex-shrink-0 overflow-hidden bg-lumera-border">
+                            {thumb ? (
+                              <img src={thumb} alt={film.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{film.title}</p>
+                            <div className="flex items-center gap-3 mt-0.5">
+                              <span className="text-lumera-muted text-xs">{film.category_name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
                                 film.is_published
                                   ? "bg-green-500/15 text-green-400"
                                   : "bg-lumera-border text-lumera-muted"
-                              }`}
-                            >
-                              {film.is_published ? "Published" : "Draft"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-lumera-muted text-xs">
-                            <span className="flex items-center gap-1">
-                              <Eye size={10} /> {film.views}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Heart size={10} /> {film.likes_count}
-                            </span>
+                              }`}>
+                                {film.is_published ? "Published" : "Draft"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-lumera-muted text-xs">
+                              <span className="flex items-center gap-1"><Eye size={10} /> {film.views}</span>
+                              <span className="flex items-center gap-1"><Heart size={10} /> {film.likes_count}</span>
+                            </div>
                           </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Link
-                            to={`/film/${film.id}`}
-                            className="text-xs text-lumera-muted hover:text-white px-2 py-1 border border-lumera-border rounded transition-colors"
-                          >
+                          <Link to={`/film/${film.id}`} className="text-xs text-lumera-muted hover:text-white px-2 py-1 border border-lumera-border rounded transition-colors">
                             View
                           </Link>
-                          <Link
-                            to={`/upload/${film.id}`}
-                            className="text-xs text-lumera-muted hover:text-lumera-gold px-2 py-1 border border-lumera-border rounded transition-colors"
-                          >
+                          <Link to={`/upload/${film.id}`} className="text-xs text-lumera-muted hover:text-lumera-gold px-2 py-1 border border-lumera-border rounded transition-colors">
                             Edit
                           </Link>
                           <button
@@ -583,11 +563,7 @@ export default function Dashboard() {
                           >
                             {film.is_published ? "Unpublish" : "Publish"}
                           </button>
-                          <button
-                            onClick={() => handleDelete(film.id)}
-                            className="text-lumera-muted hover:text-red-400 transition-colors p-1"
-                            title="Delete film"
-                          >
+                          <button onClick={() => handleDelete(film.id)} className="text-lumera-muted hover:text-red-400 transition-colors p-1" title="Delete film">
                             <Trash2 size={14} />
                           </button>
                         </div>

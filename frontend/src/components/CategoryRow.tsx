@@ -26,7 +26,7 @@ export default function CategoryRow({ title, slug }: CategoryRowProps) {
   return (
     <div className="mb-12">
       {/* Section header */}
-      <div className="px-16 mb-5 flex items-end justify-between">
+      <div className="px-4 md:px-16 mb-5 flex items-end justify-between">
         <div>
           <p className="label-overline mb-1.5">Category</p>
           <h2 className="font-display text-xl text-lumera-text">{title}</h2>
@@ -43,7 +43,7 @@ export default function CategoryRow({ title, slug }: CategoryRowProps) {
 
       {/* Horizontal scroll row */}
       <div className="flex gap-5 overflow-x-auto pb-4 py-2 scrollbar-hide">
-        <div className="w-12 flex-shrink-0" />
+        <div className="w-4 md:w-12 flex-shrink-0" />
         {films.map((film) => (
           <FilmCard key={film.id} film={film} />
         ))}
@@ -58,7 +58,7 @@ export default function CategoryRow({ title, slug }: CategoryRowProps) {
             <span className="text-xs uppercase tracking-film">See all</span>
           </Link>
         )}
-        <div className="w-12 flex-shrink-0" />
+        <div className="w-4 md:w-12 flex-shrink-0" />
       </div>
     </div>
   )

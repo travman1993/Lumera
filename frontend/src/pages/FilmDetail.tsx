@@ -92,7 +92,7 @@ export default function FilmDetail() {
     <div className="pt-16 min-h-screen">
 
       {/* ── Horizontal hero banner ── */}
-      <div className="relative w-full h-[420px] overflow-hidden">
+      <div className="relative w-full h-[220px] md:h-[420px] overflow-hidden">
         {coverSrc ? (
           <img src={coverSrc} alt={film.title} className="w-full h-full object-cover object-center" />
         ) : (
@@ -109,11 +109,11 @@ export default function FilmDetail() {
       </div>
 
       {/* ── Poster + title row (overlaps the hero) ── */}
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="flex items-end gap-6 -mt-24 mb-10 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 md:px-6">
+        <div className="flex items-end gap-4 md:gap-6 -mt-12 md:-mt-24 mb-8 md:mb-10 relative z-10">
 
           {/* Vertical poster */}
-          <div className="w-36 flex-shrink-0 rounded-lg overflow-hidden border border-lumera-border shadow-2xl" style={{ aspectRatio: "2/3" }}>
+          <div className="w-24 md:w-36 flex-shrink-0 rounded-lg overflow-hidden border border-lumera-border shadow-2xl" style={{ aspectRatio: "2/3" }}>
             {thumbnail ? (
               <img src={thumbnail} alt={film.title} className="w-full h-full object-cover" />
             ) : (
@@ -123,8 +123,8 @@ export default function FilmDetail() {
 
           {/* Title + meta */}
           <div className="pb-1 min-w-0">
-            <h1 className="font-display text-4xl lg:text-5xl text-white leading-tight">{film.title}</h1>
-            <div className="flex flex-wrap items-center gap-4 mt-3 text-lumera-muted text-sm">
+            <h1 className="font-display text-2xl md:text-4xl lg:text-5xl text-white leading-tight">{film.title}</h1>
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-2 md:mt-3 text-lumera-muted text-xs md:text-sm">
               <Link
                 to={`/creator/${film.creator_id}`}
                 className="text-white hover:text-lumera-gold transition-colors font-medium"
@@ -141,7 +141,7 @@ export default function FilmDetail() {
       </div>
 
       {/* ── Content ── */}
-      <div className="max-w-5xl mx-auto px-6 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
 
         {/* Left column — main content */}
         <div className="lg:col-span-2 flex flex-col gap-8">

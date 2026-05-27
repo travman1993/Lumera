@@ -83,7 +83,7 @@ export default function CategoryPage() {
 
       {/* Header */}
       <div className="border-b border-lumera-border bg-lumera-surface">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-10">
           <Link
             to="/"
             className="label-overline text-lumera-muted hover:text-lumera-gold transition-colors duration-250 mb-4 inline-block"
@@ -102,7 +102,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Search + Sort toolbar */}
-      <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
 
         {/* Search */}
         <div className="relative w-full sm:w-80">
@@ -143,7 +143,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Film grid */}
-      <div className="max-w-7xl mx-auto px-8 pb-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pb-16">
         {loading ? (
           <div className="flex items-center justify-center py-32 text-lumera-muted text-sm">
             Loading…

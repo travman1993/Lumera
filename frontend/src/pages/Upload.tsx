@@ -322,7 +322,7 @@ export default function Upload() {
             {contributors.map((contributor, index) => (
               <div
                 key={index}
-                className="grid grid-cols-3 gap-3 items-start bg-lumera-surface border border-lumera-border rounded-lg p-4"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start bg-lumera-surface border border-lumera-border rounded-lg p-4"
               >
                 <div>
                   <label className={labelClass}>Name</label>
