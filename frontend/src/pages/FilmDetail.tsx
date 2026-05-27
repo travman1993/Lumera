@@ -102,7 +102,7 @@ export default function FilmDetail() {
         <div className="absolute inset-0 bg-gradient-to-t from-lumera-dark via-lumera-dark/40 to-transparent" />
 
         <div className="absolute top-6 left-6">
-          <span className="text-lumera-gold text-xs font-medium uppercase tracking-widest">
+          <span className="label-overline text-lumera-gold">
             {film.category_name}
           </span>
         </div>
@@ -267,7 +267,7 @@ export default function FilmDetail() {
           {/* Description */}
           {film.description && (
             <section>
-              <h2 className="text-white text-lg font-semibold mb-3">About this film</h2>
+              <p className="label-overline mb-2">About this film</p>
               <p className="text-lumera-muted leading-relaxed whitespace-pre-wrap">
                 {film.description}
               </p>
@@ -277,7 +277,7 @@ export default function FilmDetail() {
           {/* Production story */}
           {film.production_story && (
             <section>
-              <h2 className="text-white text-lg font-semibold mb-3">Production story</h2>
+              <p className="label-overline mb-2">Production story</p>
               <p className="text-lumera-muted leading-relaxed whitespace-pre-wrap">
                 {film.production_story}
               </p>
@@ -287,7 +287,7 @@ export default function FilmDetail() {
           {/* Contributors */}
           {film.contributors && film.contributors.length > 0 && (
             <section>
-              <h2 className="text-white text-lg font-semibold mb-4">Credits</h2>
+              <p className="label-overline mb-4">Credits</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {film.contributors.map((c, i) => (
                   <div
@@ -312,7 +312,7 @@ export default function FilmDetail() {
         <aside className="flex flex-col gap-6">
           {/* Creator card */}
           <div className="bg-lumera-surface border border-lumera-border rounded-xl p-5">
-            <p className="text-lumera-muted text-xs uppercase tracking-widest mb-3">Creator</p>
+            <p className="label-overline mb-3">Creator</p>
             <Link
               to={`/creator/${film.creator_id}`}
               className="text-white font-semibold hover:text-lumera-gold transition-colors"
@@ -325,7 +325,7 @@ export default function FilmDetail() {
           {/* Production details */}
           {(film.budget || film.gear_used) && (
             <div className="bg-lumera-surface border border-lumera-border rounded-xl p-5 flex flex-col gap-4">
-              <p className="text-lumera-muted text-xs uppercase tracking-widest">Production</p>
+              <p className="label-overline">Production</p>
 
               {film.budget && (
                 <div className="flex items-start gap-3">

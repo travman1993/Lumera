@@ -43,7 +43,7 @@ export default function Upload() {
   useEffect(() => {
     getCategories()
       .then(setCategories)
-      .catch(() => setCategories([]))
+      .catch(() => setError("Could not load categories — is the backend running?"))
   }, [])
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function Upload() {
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault()
     setError("")
 
@@ -137,9 +137,9 @@ export default function Upload() {
   // ── Shared styles ────────────────────────────────────────────────────────
 
   const inputClass =
-    "w-full bg-lumera-dark border border-lumera-border rounded px-4 py-3 text-white text-sm focus:outline-none focus:border-lumera-gold placeholder:text-lumera-muted/50"
+    "w-full bg-lumera-dark border border-lumera-border rounded px-4 py-3 text-lumera-text text-sm focus:outline-none focus:border-lumera-gold placeholder:text-lumera-muted/50 transition-colors duration-250"
 
-  const labelClass = "block text-sm text-lumera-muted mb-1.5"
+  const labelClass = "block text-2xs uppercase tracking-film text-lumera-muted mb-2"
 
   return (
     <div className="pt-16 min-h-screen">
@@ -164,9 +164,9 @@ export default function Upload() {
 
           {/* ── Core info ── */}
           <section className="flex flex-col gap-5">
-            <h2 className="text-white font-semibold border-b border-lumera-border pb-2">
-              Film details
-            </h2>
+            <div className="border-b border-lumera-border pb-3">
+              <p className="label-overline mb-1">Film details</p>
+            </div>
 
             <div>
               <label className={labelClass}>Title *</label>
@@ -235,9 +235,9 @@ export default function Upload() {
           {/* ── Files (upload only) ── */}
           {!isEditing && (
             <section className="flex flex-col gap-5">
-              <h2 className="text-white font-semibold border-b border-lumera-border pb-2">
-                Files
-              </h2>
+              <div className="border-b border-lumera-border pb-3">
+                <p className="label-overline mb-1">Files</p>
+              </div>
 
               <div>
                 <label className={labelClass}>Poster / thumbnail</label>
@@ -286,9 +286,9 @@ export default function Upload() {
 
           {/* ── Production details ── */}
           <section className="flex flex-col gap-5">
-            <h2 className="text-white font-semibold border-b border-lumera-border pb-2">
-              Production details
-            </h2>
+            <div className="border-b border-lumera-border pb-3">
+              <p className="label-overline mb-1">Production details</p>
+            </div>
 
             <div>
               <label className={labelClass}>Gear used</label>
@@ -315,9 +315,9 @@ export default function Upload() {
 
           {/* ── Contributors ── */}
           <section className="flex flex-col gap-4">
-            <h2 className="text-white font-semibold border-b border-lumera-border pb-2">
-              Contributors
-            </h2>
+            <div className="border-b border-lumera-border pb-3">
+              <p className="label-overline mb-1">Contributors</p>
+            </div>
 
             {contributors.map((contributor, index) => (
               <div

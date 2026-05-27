@@ -21,12 +21,13 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-lumera-dark via-black/40 to-transparent" />
 
         <div className="absolute bottom-1/4 left-0 px-16 max-w-2xl">
-          <h1 className="font-display text-5xl text-white mb-4">Cinema for Creators</h1>
-          <p className="text-lumera-muted text-lg mb-6">
+          <p className="label-overline mb-3">Independent Cinema</p>
+          <h1 className="font-display text-5xl lg:text-6xl text-white mb-4 leading-tight">Cinema for Creators</h1>
+          <p className="text-lumera-muted text-base leading-relaxed mb-8 max-w-lg">
             Discover short films, documentaries, music videos and commercial work from the
             world's best independent creators.
           </p>
-          <button className="px-6 py-3 bg-lumera-gold text-black font-semibold rounded hover:bg-lumera-gold-light transition-all">
+          <button className="px-7 py-3 bg-lumera-gold text-black font-semibold rounded hover:bg-lumera-gold-light transition-all duration-250 text-sm tracking-wide">
             Start Watching
           </button>
         </div>

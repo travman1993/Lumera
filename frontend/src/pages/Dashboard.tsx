@@ -171,8 +171,8 @@ export default function Dashboard() {
   const totalLikes = films.reduce((sum, f) => sum + f.likes_count, 0)
 
   const inputClass =
-    "w-full bg-lumera-dark border border-lumera-border rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-lumera-gold placeholder:text-lumera-muted/50"
-  const labelClass = "block text-xs text-lumera-muted mb-1"
+    "w-full bg-lumera-dark border border-lumera-border rounded px-3 py-2 text-lumera-text text-sm focus:outline-none focus:border-lumera-gold placeholder:text-lumera-muted/50 transition-colors duration-250"
+  const labelClass = "block text-2xs uppercase tracking-film text-lumera-muted mb-1.5"
 
   if (loading) {
     return (
@@ -273,7 +273,7 @@ export default function Dashboard() {
                   )}
                   {creatorData?.gear && (
                     <div>
-                      <p className="text-lumera-muted text-xs uppercase tracking-widest mb-0.5">
+                      <p className="label-overline mb-0.5">
                         Gear
                       </p>
                       <p className="text-white text-xs">{creatorData.gear}</p>

@@ -3,19 +3,52 @@
 @tailwind utilities;
 
 @layer base {
-    /* Global base styles added to whole app */
     body {
-        @apply bg-lumera-dark text-white font-sans;
+        @apply bg-lumera-dark text-lumera-text font-sans antialiased;
+        /* antialiased = smoother font rendering on Mac/retina displays */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        /* Slightly improved text rendering for a premium feel */
+        text-rendering: optimizeLegibility;
     }
 
-    /* Removes default browser margin/padding, evry element sizes itself predictably */
     * {
         @apply m-0 p-0 box-border;
     }
 
-    /* Hide scroll bar */
+    /* Slightly softer default line-height for readability */
+    p, li {
+        line-height: 1.7;
+    }
+
+    /* Smooth scroll for anchor links */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Better focus ring for accessibility — uses gold */
+    *:focus-visible {
+        @apply outline-none ring-2 ring-lumera-gold ring-offset-2 ring-offset-lumera-dark;
+    }
+}
+
+@layer utilities {
+    /* Hide scrollbar across browsers */
     .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Uppercase label overline — the core typographic pattern for section labels */
+    .label-overline {
+        @apply text-2xs uppercase tracking-film text-lumera-muted font-medium;
+    }
+
+    /* Cinematic section divider — thin gold line */
+    .divider-gold {
+        @apply border-t border-lumera-gold/20;
     }
 }
