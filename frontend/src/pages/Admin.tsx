@@ -48,7 +48,6 @@ export default function Admin() {
   useEffect(() => {
     if (!getToken()) { navigate("/login"); return }
     getCurrentUser().then((u) => {
-      // @ts-ignore — is_admin not in UserResponse type yet; backend returns it
       if (!u.is_admin) navigate("/")
     }).catch(() => navigate("/login"))
   }, [navigate])

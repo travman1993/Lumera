@@ -61,6 +61,7 @@ class UserResponse(BaseModel):
     is_verified: bool
     is_active: bool
     is_creator: bool
+    is_admin: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
