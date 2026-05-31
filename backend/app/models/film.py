@@ -18,13 +18,13 @@ class Film(Base):
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
 
-    thumbnail_url = Column(String, nullable=True)  # vertical 2:3 poster
-    cover_url = Column(String, nullable=True)       # horizontal 16:9 banner
+    thumbnail_url = Column(String, nullable=True)   # vertical 2:3 poster
+    cover_url = Column(String, nullable=True)        # horizontal 16:9 banner
     video_url = Column(String, nullable=True)
 
-    duration = Column(String, nullable=True)   # e.g. "12 min"
-    budget = Column(String, nullable=True)     # e.g. "$5,000"
-    gear_used = Column(Text, nullable=True)    # free-form text
+    duration = Column(String(30), nullable=True)
+    budget = Column(String(50), nullable=True)
+    gear_used = Column(Text, nullable=True)
 
     # JSON array of { name, role, social } objects
     contributors = Column(JSONB, nullable=True, default=lambda: [])
@@ -32,7 +32,16 @@ class Film(Base):
     views = Column(Integer, default=0, nullable=False)
     likes_count = Column(Integer, default=0, nullable=False)
     featured = Column(Boolean, default=False, nullable=False)
+
+    # Visibility: 'draft' | 'unlisted' | 'public'
+    # is_published stays in sync: True only when visibility='public'
+    visibility = Column(String(20), nullable=False, default="draft")
     is_published = Column(Boolean, default=False, nullable=False)
+
+    # Copyright acknowledgement logged at publish time
+    copyright_acknowledged = Column(Boolean, default=False, nullable=False)
+    copyright_acknowledged_at = Column(DateTime(timezone=True), nullable=True)
+    copyright_acknowledged_ip = Column(String(45), nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(

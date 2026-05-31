@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react"
 import {
   type Category,
   type Contributor,
+  type FilmVisibility,
   getCategories,
   uploadFilm,
   updateFilm,
@@ -31,7 +32,8 @@ export default function Upload() {
   const [duration, setDuration] = useState("")
   const [budget, setBudget] = useState("")
   const [gearUsed, setGearUsed] = useState("")
-  const [isPublished, setIsPublished] = useState(false)
+  const [visibility, setVisibility] = useState<FilmVisibility>("draft")
+  const [copyrightAcknowledged, setCopyrightAcknowledged] = useState(false)
   const [thumbnail, setThumbnail] = useState<File | null>(null)
   const [cover, setCover] = useState<File | null>(null)
   const [video, setVideo] = useState<File | null>(null)
@@ -39,7 +41,6 @@ export default function Upload() {
     { name: "", role: "", social: "" },
   ])
 
-  // Load categories and (if editing) the existing film data
   useEffect(() => {
     getCategories()
       .then(setCategories)
@@ -56,7 +57,7 @@ export default function Upload() {
       setDuration(film.duration ?? "")
       setBudget(film.budget ?? "")
       setGearUsed(film.gear_used ?? "")
-      setIsPublished(film.is_published)
+      setVisibility(film.visibility ?? "draft")
       if (film.contributors.length > 0) {
         setContributors(
           film.contributors.map((c) => ({
@@ -90,13 +91,18 @@ export default function Upload() {
     if (!title.trim()) return setError("Title is required.")
     if (!isEditing && !categoryId) return setError("Please select a category.")
 
+    if (visibility === "public" && !copyrightAcknowledged) {
+      return setError(
+        "You must confirm copyright ownership before publishing publicly."
+      )
+    }
+
     setLoading(true)
 
     try {
       const filledContributors = contributors.filter((c) => c.name.trim() && c.role.trim())
 
       if (isEditing && editId) {
-        // JSON update — text fields only (files can't be changed via PUT yet)
         await updateFilm(editId, {
           title: title.trim(),
           description: description.trim() || undefined,
@@ -106,7 +112,8 @@ export default function Upload() {
           budget: budget.trim() || undefined,
           gear_used: gearUsed.trim() || undefined,
           contributors: filledContributors,
-          is_published: isPublished,
+          visibility,
+          is_published: visibility === "public",
         })
         navigate(`/film/${editId}`)
       } else {
@@ -119,7 +126,8 @@ export default function Upload() {
         formData.append("budget", budget.trim())
         formData.append("gear_used", gearUsed.trim())
         formData.append("contributors", JSON.stringify(filledContributors))
-        formData.append("is_published", String(isPublished))
+        formData.append("visibility", visibility)
+        formData.append("copyright_acknowledged", String(copyrightAcknowledged))
         if (thumbnail) formData.append("thumbnail", thumbnail)
         if (cover) formData.append("cover", cover)
         if (video) formData.append("video", video)
@@ -177,6 +185,7 @@ export default function Upload() {
                 placeholder="My Short Film"
                 className={inputClass}
                 required
+                maxLength={120}
               />
             </div>
 
@@ -205,6 +214,7 @@ export default function Upload() {
                 rows={4}
                 placeholder="What is this project about?"
                 className={inputClass}
+                maxLength={3000}
               />
             </div>
 
@@ -217,6 +227,7 @@ export default function Upload() {
                   onChange={(e) => setDuration(e.target.value)}
                   placeholder="e.g. 12 min"
                   className={inputClass}
+                  maxLength={30}
                 />
               </div>
               <div>
@@ -227,6 +238,7 @@ export default function Upload() {
                   onChange={(e) => setBudget(e.target.value)}
                   placeholder="e.g. $5,000"
                   className={inputClass}
+                  maxLength={50}
                 />
               </div>
             </div>
@@ -243,13 +255,13 @@ export default function Upload() {
                 <label className={labelClass}>Poster / thumbnail</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)}
                   className="w-full text-sm text-lumera-muted file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-lumera-border file:bg-lumera-surface file:text-lumera-muted file:text-sm hover:file:border-lumera-gold hover:file:text-white cursor-pointer"
                 />
                 <p className="text-lumera-muted/60 text-xs mt-1.5">
                   <span className="text-lumera-muted">2:3 vertical / portrait</span>{" "}
-                  (e.g. 800 × 1200 px) · shown on browse rows as the film card
+                  (e.g. 800 × 1200 px) · JPEG, PNG, or WebP · max 10 MB
                 </p>
               </div>
 
@@ -257,13 +269,13 @@ export default function Upload() {
                 <label className={labelClass}>Cover image (banner)</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => setCover(e.target.files?.[0] ?? null)}
                   className="w-full text-sm text-lumera-muted file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-lumera-border file:bg-lumera-surface file:text-lumera-muted file:text-sm hover:file:border-lumera-gold hover:file:text-white cursor-pointer"
                 />
                 <p className="text-lumera-muted/60 text-xs mt-1.5">
                   <span className="text-lumera-muted">16:9 horizontal / landscape</span>{" "}
-                  (e.g. 1920 × 1080 px) · shown as the wide hero banner on the film page
+                  (e.g. 1920 × 1080 px) · JPEG, PNG, or WebP · max 10 MB
                 </p>
               </div>
 
@@ -271,14 +283,13 @@ export default function Upload() {
                 <label className={labelClass}>Video file</label>
                 <input
                   type="file"
-                  accept="video/*"
+                  accept="video/mp4,video/quicktime,video/webm"
                   onChange={(e) => setVideo(e.target.files?.[0] ?? null)}
                   className="w-full text-sm text-lumera-muted file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-lumera-border file:bg-lumera-surface file:text-lumera-muted file:text-sm hover:file:border-lumera-gold hover:file:text-white cursor-pointer"
                 />
                 <p className="text-lumera-muted/60 text-xs mt-1.5">
                   Recommended:{" "}
-                  <span className="text-lumera-muted">MP4 / H.264</span> · 1080p
-                  or 4K · horizontal 16:9
+                  <span className="text-lumera-muted">MP4 / H.264</span> · 1080p or 4K · max 500 MB
                 </p>
               </div>
             </section>
@@ -298,6 +309,7 @@ export default function Upload() {
                 onChange={(e) => setGearUsed(e.target.value)}
                 placeholder="Sony FX3, DJI RS3, Sigma 35mm 1.4"
                 className={inputClass}
+                maxLength={500}
               />
             </div>
 
@@ -309,6 +321,7 @@ export default function Upload() {
                 rows={4}
                 placeholder="How did this project come together?"
                 className={inputClass}
+                maxLength={3000}
               />
             </div>
           </section>
@@ -332,6 +345,7 @@ export default function Upload() {
                     onChange={(e) => updateContributor(index, "name", e.target.value)}
                     placeholder="John Smith"
                     className={inputClass}
+                    maxLength={80}
                   />
                 </div>
                 <div>
@@ -342,6 +356,7 @@ export default function Upload() {
                     onChange={(e) => updateContributor(index, "role", e.target.value)}
                     placeholder="Editor"
                     className={inputClass}
+                    maxLength={80}
                   />
                 </div>
                 <div className="relative">
@@ -375,34 +390,84 @@ export default function Upload() {
             </button>
           </section>
 
-          {/* ── Publish toggle + submit ── */}
+          {/* ── Visibility + publish ── */}
           <section className="flex flex-col gap-6 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-10 h-6 bg-lumera-border rounded-full peer-checked:bg-lumera-gold transition-colors" />
-                <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
-              </div>
-              <div>
-                <p className="text-white text-sm font-medium">
-                  {isEditing ? "Published" : "Publish immediately"}
+            <div className="border-b border-lumera-border pb-3">
+              <p className="label-overline mb-1">Visibility</p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {(
+                [
+                  {
+                    value: "draft" as FilmVisibility,
+                    label: "Draft",
+                    description: "Only you can see this. It won't appear anywhere publicly.",
+                  },
+                  {
+                    value: "unlisted" as FilmVisibility,
+                    label: "Unlisted",
+                    description: "Anyone with the direct link can watch it, but it won't appear in browse or search.",
+                  },
+                  {
+                    value: "public" as FilmVisibility,
+                    label: "Public",
+                    description: "Visible to everyone on Lumera.",
+                  },
+                ] as const
+              ).map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
+                    visibility === opt.value
+                      ? "border-lumera-gold bg-lumera-gold/5"
+                      : "border-lumera-border hover:border-lumera-gold/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value={opt.value}
+                    checked={visibility === opt.value}
+                    onChange={() => {
+                      setVisibility(opt.value)
+                      // Reset copyright acknowledgement when moving away from public
+                      if (opt.value !== "public") setCopyrightAcknowledged(false)
+                    }}
+                    className="mt-0.5 accent-lumera-gold flex-shrink-0"
+                  />
+                  <div>
+                    <p className="text-white text-sm font-medium">{opt.label}</p>
+                    <p className="text-lumera-muted text-xs mt-0.5">{opt.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {/* Copyright acknowledgement — only required when publishing publicly */}
+            {visibility === "public" && (
+              <div className="bg-amber-500/5 border border-amber-500/30 rounded-lg p-4">
+                <p className="text-amber-400 text-xs font-medium uppercase tracking-wide mb-3">
+                  Copyright confirmation required to publish
                 </p>
-                <p className="text-lumera-muted text-xs">
-                  {isEditing
-                    ? "Toggle to publish or unpublish this project."
-                    : "If off, the project is saved as a draft and won't appear publicly."}
-                </p>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={copyrightAcknowledged}
+                    onChange={(e) => setCopyrightAcknowledged(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded accent-lumera-gold flex-shrink-0 cursor-pointer"
+                  />
+                  <span className="text-sm text-lumera-muted group-hover:text-lumera-text transition-colors leading-snug">
+                    I certify that I own or have permission to use all content included in this
+                    project — including footage, music, images, and any trademarks shown.
+                  </span>
+                </label>
               </div>
-            </label>
+            )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (visibility === "public" && !copyrightAcknowledged)}
               className="w-full py-4 bg-lumera-gold text-black font-semibold rounded hover:bg-lumera-gold-light transition-all disabled:opacity-50 text-sm"
             >
               {loading
@@ -411,7 +476,11 @@ export default function Upload() {
                   : "Uploading…"
                 : isEditing
                   ? "Save changes"
-                  : "Upload project"}
+                  : visibility === "public"
+                    ? "Upload & Publish"
+                    : visibility === "unlisted"
+                      ? "Upload as Unlisted"
+                      : "Save as Draft"}
             </button>
           </section>
         </form>

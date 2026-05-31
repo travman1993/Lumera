@@ -13,3 +13,7 @@ greenlet
 aiofiles
 boto3
 httpx
+slowapi
+better-profanity
+filetype
+resend

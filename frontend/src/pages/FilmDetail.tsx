@@ -25,6 +25,7 @@ export default function FilmDetail() {
   const [liked, setLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(0)
 
+  const [error, setError] = useState("")
   const [showReport, setShowReport] = useState(false)
   const [reportReason, setReportReason] = useState("inappropriate")
   const [reportDetails, setReportDetails] = useState("")
@@ -57,13 +58,16 @@ export default function FilmDetail() {
   }, [id])
 
   const handleLike = async () => {
-    if (!film || liked) return
+    if (!film) return
     try {
       const res = await likeFilm(film.id)
       setLikesCount(res.likes_count)
-      setLiked(true)
-    } catch {
-      // silent fail
+      setLiked(res.liked)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
+      if (msg.toLowerCase().includes("logged in")) {
+        setError("Sign in to like this film.")
+      }
     }
   }
 
@@ -172,13 +176,15 @@ export default function FilmDetail() {
           )}
 
           {/* Like + Report buttons */}
+          {error && (
+            <p className="text-sm text-red-400 -mb-1">{error}</p>
+          )}
           <div className="flex items-center gap-3">
             <button
               onClick={handleLike}
-              disabled={liked}
               className={`flex items-center gap-2 px-5 py-2.5 rounded border transition-all text-sm font-medium
                 ${liked
-                  ? "border-lumera-gold text-lumera-gold bg-lumera-gold/10 cursor-default"
+                  ? "border-lumera-gold text-lumera-gold bg-lumera-gold/10"
                   : "border-lumera-border text-lumera-muted hover:border-lumera-gold hover:text-lumera-gold"
                 }`}
             >

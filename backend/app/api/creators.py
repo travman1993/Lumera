@@ -4,6 +4,7 @@ from uuid import UUID
 from pathlib import Path
 
 import aiofiles
+import filetype
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,27 +14,33 @@ from app.schemas.creator import CreatorProfileUpdate, CreatorProfileResponse, Cr
 from app.services.creator_service import get_profile_by_user_id, upsert_creator_profile
 from app.services.user_service import get_user_by_id
 from app.services.film_service import get_films_by_creator
+from app.services.moderation_service import validate_text_field
 from app.services import storage_service
 from app.auth.jwt import verify_token
 
 security = HTTPBearer()
 
 AVATAR_DIR = Path("uploads") / "avatars"
-ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_AVATAR_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_AVATAR_MIMES = {"image/jpeg", "image/png", "image/webp"}
 MAX_AVATAR_BYTES = 5 * 1024 * 1024  # 5 MB
 
 router = APIRouter(prefix="/creators", tags=["creators"])
 
 
 async def _save_avatar(file: UploadFile) -> str:
-    if file.content_type not in ALLOWED_AVATAR_TYPES:
+    if file.content_type not in ALLOWED_AVATAR_CONTENT_TYPES:
         raise HTTPException(status_code=415, detail="Avatar must be a JPEG, PNG, or WebP image.")
     content = await file.read()
     if len(content) > MAX_AVATAR_BYTES:
         raise HTTPException(status_code=413, detail="Avatar too large. Max 5 MB.")
+
+    kind = filetype.guess(content[:8192])
+    if not kind or kind.mime not in ALLOWED_AVATAR_MIMES:
+        raise HTTPException(status_code=415, detail="File contents do not match a supported image format.")
+
     if storage_service.cloudflare_ready():
         return await storage_service.upload_image(content, file.content_type)
-    # Local fallback for development
     os.makedirs(AVATAR_DIR, exist_ok=True)
     ext = Path(file.filename or "avatar.jpg").suffix or ".jpg"
     filename = f"{uuid.uuid4()}{ext}"
@@ -50,7 +57,7 @@ async def upload_creator_avatar(
 ):
     user_id_str = verify_token(credentials.credentials)
     if not user_id_str:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token.")
     avatar_url = await _save_avatar(avatar)
     return {"avatar_url": avatar_url}
 
@@ -63,7 +70,15 @@ async def update_my_profile(
 ):
     user_id_str = verify_token(credentials.credentials)
     if not user_id_str:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+    # Profanity and length checks on profile text fields
+    try:
+        validate_text_field("display_name", data.display_name)
+        validate_text_field("bio", data.bio)
+        validate_text_field("location", data.location)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     profile = await upsert_creator_profile(db, UUID(user_id_str), data)
     return profile
@@ -73,7 +88,7 @@ async def update_my_profile(
 async def get_creator(user_id: UUID, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_id(db, str(user_id))
     if not user:
-        raise HTTPException(status_code=404, detail="Creator not found")
+        raise HTTPException(status_code=404, detail="Creator not found.")
 
     profile = await get_profile_by_user_id(db, user_id)
     films = await get_films_by_creator(db, user_id)

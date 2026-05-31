@@ -6,6 +6,8 @@ export interface RegisterData {
   email: string
   username: string
   password: string
+  age_confirmed: boolean
+  tos_accepted: boolean
 }
 
 export interface LoginData {
@@ -42,6 +44,8 @@ export interface Contributor {
   social?: string
 }
 
+export type FilmVisibility = "draft" | "unlisted" | "public"
+
 export interface Film {
   id: string
   title: string
@@ -63,6 +67,7 @@ export interface Film {
   views: number
   likes_count: number
   featured: boolean
+  visibility: FilmVisibility
   is_published: boolean
   created_at: string
   updated_at: string
@@ -137,6 +142,11 @@ export async function registerUser(data: RegisterData): Promise<UserResponse> {
   })
   if (!res.ok) {
     const err = await res.json()
+    // Pydantic validation errors come back as an array; flatten to a single message
+    if (Array.isArray(err.detail)) {
+      const msg = err.detail.map((e: { msg: string }) => e.msg).join(" ")
+      throw new Error(msg)
+    }
     throw new Error(err.detail || "Registration failed")
   }
   return res.json()
@@ -161,6 +171,17 @@ export async function getCurrentUser(): Promise<UserResponse> {
   })
   if (!res.ok) throw new Error("Not authenticated")
   return res.json()
+}
+
+export async function resendVerification(): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to resend verification email")
+  }
 }
 
 // ─── Category requests ──────────────────────────────────────────────────────
@@ -194,21 +215,52 @@ export async function getFilmById(id: string): Promise<Film> {
   return res.json()
 }
 
-export async function likeFilm(id: string): Promise<{ likes_count: number }> {
-  const res = await fetch(`${BASE_URL}/films/${id}/like`, { method: "POST" })
-  if (!res.ok) throw new Error("Failed to like film")
+export async function likeFilm(id: string): Promise<{ likes_count: number; liked: boolean }> {
+  const token = getToken()
+  if (!token) throw new Error("You must be logged in to like a film.")
+  const res = await fetch(`${BASE_URL}/films/${id}/like`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to like film")
+  }
   return res.json()
 }
 
 export async function reportFilm(id: string, reason: string, details?: string): Promise<void> {
+  const token = getToken()
+  if (!token) throw new Error("You must be logged in to submit a report.")
   const body = new FormData()
   body.append("reason", reason)
   if (details) body.append("details", details)
-  const headers: Record<string, string> = {}
+  const res = await fetch(`${BASE_URL}/films/${id}/report`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body,
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to submit report")
+  }
+}
+
+export async function reportUser(userId: string, reason: string, details?: string): Promise<void> {
   const token = getToken()
-  if (token) headers["Authorization"] = `Bearer ${token}`
-  const res = await fetch(`${BASE_URL}/films/${id}/report`, { method: "POST", headers, body })
-  if (!res.ok) throw new Error("Failed to submit report")
+  if (!token) throw new Error("You must be logged in to submit a report.")
+  const body = new FormData()
+  body.append("reason", reason)
+  if (details) body.append("details", details)
+  const res = await fetch(`${BASE_URL}/creators/${userId}/report`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body,
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to submit report")
+  }
 }
 
 export async function uploadFilm(formData: FormData): Promise<Film> {

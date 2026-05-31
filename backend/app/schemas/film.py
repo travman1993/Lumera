@@ -19,6 +19,7 @@ class FilmCreate(BaseModel):
     budget: Optional[str] = None
     gear_used: Optional[str] = None
     contributors: Optional[List[Contributor]] = []
+    visibility: str = "draft"
     is_published: bool = False
 
 
@@ -31,11 +32,11 @@ class FilmUpdate(BaseModel):
     budget: Optional[str] = None
     gear_used: Optional[str] = None
     contributors: Optional[List[Contributor]] = None
+    visibility: Optional[str] = None
     is_published: Optional[bool] = None
     featured: Optional[bool] = None
 
 
-# Used for both list and detail responses — includes joined category/creator data
 class FilmResponse(BaseModel):
     id: UUID
     title: str
@@ -57,6 +58,7 @@ class FilmResponse(BaseModel):
     views: int
     likes_count: int
     featured: bool
+    visibility: str = "draft"
     is_published: bool
     created_at: datetime
     updated_at: datetime

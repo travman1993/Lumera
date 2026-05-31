@@ -9,6 +9,8 @@ import CategoryPage from "./pages/CategoryPage"
 import Upload from "./pages/Upload"
 import Dashboard from "./pages/Dashboard"
 import NotFound from "./pages/NotFound"
+import VerifyEmailSent from "./pages/VerifyEmailSent"
+import VerifyEmail from "./pages/VerifyEmail"
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/film/:id" element={<FilmDetail />} />
         <Route path="/creator/:id" element={<CreatorProfile />} />
         <Route path="/category/:slug" element={<CategoryPage />} />

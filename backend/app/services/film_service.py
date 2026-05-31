@@ -1,10 +1,13 @@
 import re
 import json
 from uuid import UUID
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 
 from app.models.film import Film
+from app.models.film_like import FilmLike
 from app.models.category import Category
 from app.models.user import User
 from app.models.creator import CreatorProfile
@@ -51,6 +54,7 @@ async def _build_film_response(db: AsyncSession, film: Film) -> FilmResponse:
         views=film.views,
         likes_count=film.likes_count,
         featured=film.featured,
+        visibility=film.visibility or "draft",
         is_published=film.is_published,
         created_at=film.created_at,
         updated_at=film.updated_at,
@@ -59,13 +63,15 @@ async def _build_film_response(db: AsyncSession, film: Film) -> FilmResponse:
 
 async def get_all_films(db: AsyncSession) -> list[FilmResponse]:
     result = await db.execute(
-        select(Film).where(Film.is_published == True).order_by(Film.created_at.desc())
+        select(Film).where(Film.visibility == "public").order_by(Film.created_at.desc())
     )
     films = result.scalars().all()
     return [await _build_film_response(db, f) for f in films]
 
 
-async def get_films_by_category(db: AsyncSession, slug: str, limit: int | None = None) -> list[FilmResponse]:
+async def get_films_by_category(
+    db: AsyncSession, slug: str, limit: int | None = None
+) -> list[FilmResponse]:
     cat_result = await db.execute(select(Category).where(Category.slug == slug))
     category = cat_result.scalar_one_or_none()
     if not category:
@@ -73,7 +79,7 @@ async def get_films_by_category(db: AsyncSession, slug: str, limit: int | None =
 
     query = (
         select(Film)
-        .where(Film.category_id == category.id, Film.is_published == True)
+        .where(Film.category_id == category.id, Film.visibility == "public")
         .order_by(func.random())
     )
     if limit:
@@ -108,7 +114,7 @@ async def get_all_films_by_creator(db: AsyncSession, creator_id: UUID) -> list[F
 async def get_films_by_creator(db: AsyncSession, creator_id: UUID) -> list[FilmResponse]:
     result = await db.execute(
         select(Film)
-        .where(Film.creator_id == creator_id, Film.is_published == True)
+        .where(Film.creator_id == creator_id, Film.visibility == "public")
         .order_by(Film.created_at.desc())
     )
     films = result.scalars().all()
@@ -126,16 +132,19 @@ async def create_film(
     budget: str | None,
     gear_used: str | None,
     contributors_json: str,
+    visibility: str,
     is_published: bool,
     thumbnail_url: str | None,
     cover_url: str | None,
     video_url: str | None,
+    copyright_acknowledged: bool = False,
+    copyright_acknowledged_at: datetime | None = None,
+    copyright_acknowledged_ip: str | None = None,
 ) -> Film:
     base_slug = slugify(title)
     slug = base_slug
     counter = 1
 
-    # Ensure slug uniqueness
     while await get_film_by_slug(db, slug):
         slug = f"{base_slug}-{counter}"
         counter += 1
@@ -156,7 +165,11 @@ async def create_film(
         budget=budget,
         gear_used=gear_used,
         contributors=contributors,
+        visibility=visibility,
         is_published=is_published,
+        copyright_acknowledged=copyright_acknowledged,
+        copyright_acknowledged_at=copyright_acknowledged_at,
+        copyright_acknowledged_ip=copyright_acknowledged_ip,
         thumbnail_url=thumbnail_url,
         cover_url=cover_url,
         video_url=video_url,
@@ -167,9 +180,10 @@ async def create_film(
     return film
 
 
-async def update_film(
-    db: AsyncSession, film: Film, data: dict
-) -> Film:
+async def update_film(db: AsyncSession, film: Film, data: dict) -> Film:
+    # Keep is_published in sync with visibility
+    if "visibility" in data:
+        data["is_published"] = data["visibility"] == "public"
     for field, value in data.items():
         if value is not None:
             setattr(film, field, value)
@@ -188,6 +202,38 @@ async def increment_views(db: AsyncSession, film: Film) -> None:
     await db.commit()
 
 
-async def increment_likes(db: AsyncSession, film: Film) -> None:
-    film.likes_count = (film.likes_count or 0) + 1
-    await db.commit()
+async def toggle_like(
+    db: AsyncSession, film_id: UUID, user_id: UUID
+) -> tuple[int, bool]:
+    """
+    Toggle like for a user on a film.
+    Returns (new_likes_count, now_liked).
+    now_liked=True means just liked; False means just unliked.
+    """
+    film = await get_film_by_id(db, film_id)
+    if not film:
+        return 0, False
+
+    existing = await db.execute(
+        select(FilmLike).where(
+            FilmLike.film_id == film_id, FilmLike.user_id == user_id
+        )
+    )
+    like = existing.scalar_one_or_none()
+
+    if like:
+        await db.delete(like)
+        film.likes_count = max(0, (film.likes_count or 0) - 1)
+        await db.commit()
+        return film.likes_count, False
+    else:
+        db.add(FilmLike(film_id=film_id, user_id=user_id))
+        film.likes_count = (film.likes_count or 0) + 1
+        try:
+            await db.commit()
+        except IntegrityError:
+            # Race condition: another request already inserted the like
+            await db.rollback()
+            film = await get_film_by_id(db, film_id)
+            return film.likes_count if film else 0, False
+        return film.likes_count, True
