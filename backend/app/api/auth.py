@@ -152,3 +152,149 @@ async def resend_verification(
     send_verification_email(user.email, user.username, token)
 
     return {"message": "Verification email sent."}
+
+
+# ── Account deletion ──────────────────────────────────────────────────────────
+
+@router.delete("/me", status_code=200)
+@limiter.limit("3/day")
+async def delete_account(
+    request: Request,
+    confirm_username: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = verify_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    if confirm_username.strip().lower() != user.username.lower():
+        raise HTTPException(status_code=400, detail="Username confirmation does not match.")
+
+    # Soft delete — anonymise PII, keep audit records intact
+    import uuid as _uuid
+    anon_id = str(_uuid.uuid4())[:8]
+    user.email = f"deleted_{anon_id}@deleted.lumera"
+    user.username = f"deleted_{anon_id}"
+    user.hashed_password = "DELETED"
+    user.is_active = False
+    user.is_creator = False
+    user.verification_token = None
+    user.token_version = (user.token_version or 0) + 1
+
+    # Unpublish all their films
+    from sqlalchemy import select as _select
+    from app.models.film import Film
+    films_result = await db.execute(
+        _select(Film).where(Film.creator_id == user.id)
+    )
+    for film in films_result.scalars().all():
+        film.visibility = "draft"
+        film.is_published = False
+
+    await db.commit()
+    return {"message": "Your account has been deleted."}
+
+
+# ── Creator Agreement ─────────────────────────────────────────────────────────
+
+@router.get("/agreement/current")
+async def get_current_agreement(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import select as _select
+    from app.models.agreement import AgreementVersion
+    result = await db.execute(
+        _select(AgreementVersion).order_by(AgreementVersion.effective_date.desc()).limit(1)
+    )
+    version = result.scalar_one_or_none()
+    if not version:
+        return {"version": None}
+    return {
+        "id": str(version.id),
+        "version": version.version,
+        "title": version.title,
+        "content_url": version.content_url,
+        "effective_date": version.effective_date.isoformat(),
+    }
+
+
+@router.get("/agreement/status")
+async def get_agreement_status(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns whether the current user has accepted the latest agreement version."""
+    from sqlalchemy import select as _select
+    from app.models.agreement import AgreementVersion, UserAgreement
+
+    user_id = verify_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+    version_result = await db.execute(
+        _select(AgreementVersion).order_by(AgreementVersion.effective_date.desc()).limit(1)
+    )
+    current = version_result.scalar_one_or_none()
+    if not current:
+        return {"accepted": True, "version": None}
+
+    accepted_result = await db.execute(
+        _select(UserAgreement).where(
+            UserAgreement.user_id == user_id,
+            UserAgreement.agreement_version_id == current.id,
+        )
+    )
+    accepted = accepted_result.scalar_one_or_none() is not None
+    return {
+        "accepted": accepted,
+        "version": current.version,
+        "agreement_id": str(current.id),
+        "title": current.title,
+        "content_url": current.content_url,
+    }
+
+
+@router.post("/agreement/accept", status_code=201)
+async def accept_agreement(
+    request: Request,
+    agreement_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+):
+    from sqlalchemy import select as _select
+    from app.models.agreement import AgreementVersion, UserAgreement
+    import uuid as _uuid
+
+    user_id = verify_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token.")
+
+    version_result = await db.execute(
+        _select(AgreementVersion).where(AgreementVersion.id == _uuid.UUID(agreement_id))
+    )
+    version = version_result.scalar_one_or_none()
+    if not version:
+        raise HTTPException(status_code=404, detail="Agreement version not found.")
+
+    existing = await db.execute(
+        _select(UserAgreement).where(
+            UserAgreement.user_id == user_id,
+            UserAgreement.agreement_version_id == version.id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        return {"message": "Already accepted."}
+
+    client_ip = request.headers.get("CF-Connecting-IP") or (
+        request.client.host if request.client else None
+    )
+    db.add(UserAgreement(
+        user_id=_uuid.UUID(user_id),
+        agreement_version_id=version.id,
+        accepted_ip=client_ip,
+    ))
+    await db.commit()
+    return {"message": "Agreement accepted."}

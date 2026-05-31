@@ -328,6 +328,170 @@ export async function getCreator(userId: string): Promise<CreatorPublic> {
   return res.json()
 }
 
+// ─── Account ────────────────────────────────────────────────────────────────
+
+export async function deleteAccount(confirmUsername: string): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/auth/me?confirm_username=${encodeURIComponent(confirmUsername)}`,
+    { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } }
+  )
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to delete account")
+  }
+}
+
+// ─── Creator Agreement ───────────────────────────────────────────────────────
+
+export interface AgreementStatus {
+  accepted: boolean
+  version: string | null
+  agreement_id?: string
+  title?: string
+  content_url?: string
+}
+
+export async function getAgreementStatus(): Promise<AgreementStatus> {
+  const res = await fetch(`${BASE_URL}/auth/agreement/status`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!res.ok) throw new Error("Failed to check agreement status")
+  return res.json()
+}
+
+export async function acceptAgreement(agreementId: string): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/auth/agreement/accept?agreement_id=${encodeURIComponent(agreementId)}`,
+    { method: "POST", headers: { Authorization: `Bearer ${getToken()}` } }
+  )
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to accept agreement")
+  }
+}
+
+// ─── Admin ──────────────────────────────────────────────────────────────────
+
+export interface AdminStats {
+  pending_film_reports: number
+  pending_user_reports: number
+  total_users: number
+  total_public_films: number
+}
+
+export interface AdminReport {
+  id: string
+  film_id: string
+  reporter_id: string | null
+  reason: string
+  details: string | null
+  status: string
+  action_taken: string | null
+  reviewed_at: string | null
+  created_at: string
+}
+
+export interface AdminUser {
+  id: string
+  email: string
+  username: string
+  is_active: boolean
+  is_verified: boolean
+  is_creator: boolean
+  is_admin: boolean
+  copyright_strikes: number
+  created_at: string
+}
+
+export interface AdminFilm {
+  id: string
+  title: string
+  creator_id: string
+  visibility: string
+  is_published: boolean
+  views: number
+  likes_count: number
+  created_at: string
+}
+
+function adminHeaders() {
+  return { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" }
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const res = await fetch(`${BASE_URL}/admin/stats`, { headers: adminHeaders() })
+  if (!res.ok) throw new Error("Failed to load stats")
+  return res.json()
+}
+
+export async function getAdminReports(status?: string): Promise<AdminReport[]> {
+  const url = status ? `${BASE_URL}/admin/reports?status=${status}` : `${BASE_URL}/admin/reports`
+  const res = await fetch(url, { headers: adminHeaders() })
+  if (!res.ok) throw new Error("Failed to load reports")
+  return res.json()
+}
+
+export async function updateAdminReport(
+  id: string,
+  status: string,
+  actionTaken?: string
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/reports/${id}`, {
+    method: "PATCH",
+    headers: adminHeaders(),
+    body: JSON.stringify({ status, action_taken: actionTaken }),
+  })
+  if (!res.ok) throw new Error("Failed to update report")
+}
+
+export async function getAdminUsers(q?: string): Promise<AdminUser[]> {
+  const url = q ? `${BASE_URL}/admin/users?q=${encodeURIComponent(q)}` : `${BASE_URL}/admin/users`
+  const res = await fetch(url, { headers: adminHeaders() })
+  if (!res.ok) throw new Error("Failed to load users")
+  return res.json()
+}
+
+export async function suspendUser(userId: string, reason: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/users/${userId}/suspend`, {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify(reason),
+  })
+  if (!res.ok) throw new Error("Failed to suspend user")
+}
+
+export async function restoreUser(userId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/users/${userId}/restore`, {
+    method: "POST",
+    headers: adminHeaders(),
+  })
+  if (!res.ok) throw new Error("Failed to restore user")
+}
+
+export async function getAdminFilms(): Promise<AdminFilm[]> {
+  const res = await fetch(`${BASE_URL}/admin/films`, { headers: adminHeaders() })
+  if (!res.ok) throw new Error("Failed to load films")
+  return res.json()
+}
+
+export async function adminUnpublishFilm(filmId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/films/${filmId}/unpublish`, {
+    method: "PATCH",
+    headers: adminHeaders(),
+  })
+  if (!res.ok) throw new Error("Failed to unpublish film")
+}
+
+export async function adminDeleteFilm(filmId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/films/${filmId}`, {
+    method: "DELETE",
+    headers: adminHeaders(),
+  })
+  if (!res.ok) throw new Error("Failed to delete film")
+}
+
+// ─── Creator requests ───────────────────────────────────────────────────────
+
 export async function updateCreatorProfile(data: CreatorProfileUpdate): Promise<CreatorPublic> {
   const res = await fetch(`${BASE_URL}/creators/me`, {
     method: "PUT",

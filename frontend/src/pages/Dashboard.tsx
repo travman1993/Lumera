@@ -12,6 +12,9 @@ import {
   uploadAvatar,
   updateFilm,
   deleteFilm,
+  deleteAccount,
+  removeToken,
+  removeUsername,
   getToken,
 } from "../services/api"
 
@@ -29,6 +32,12 @@ export default function Dashboard() {
   const [creatorData, setCreatorData] = useState<CreatorPublic | null>(null)
   const [films, setFilms] = useState<Film[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Account deletion state
+  const [showDeleteZone, setShowDeleteZone] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
 
   // Profile edit state
   const [editingProfile, setEditingProfile] = useState(false)
@@ -151,12 +160,32 @@ export default function Dashboard() {
     setAwards(awards.map((a, idx) => (idx === i ? { ...a, [field]: value } : a)))
 
   const togglePublish = async (film: Film) => {
+    const newVisibility = film.visibility === "public" ? "draft" : "public"
     try {
-      await updateFilm(film.id, { is_published: !film.is_published })
+      await updateFilm(film.id, { visibility: newVisibility, is_published: newVisibility === "public" })
       setFilms((prev) =>
-        prev.map((f) => (f.id === film.id ? { ...f, is_published: !f.is_published } : f))
+        prev.map((f) =>
+          f.id === film.id
+            ? { ...f, visibility: newVisibility, is_published: newVisibility === "public" }
+            : f
+        )
       )
     } catch { /* silent */ }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirm.trim()) return
+    setDeleteLoading(true)
+    setDeleteError("")
+    try {
+      await deleteAccount(deleteConfirm.trim())
+      removeToken()
+      removeUsername()
+      window.location.href = "/"
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete account.")
+      setDeleteLoading(false)
+    }
   }
 
   const handleDelete = async (filmId: string) => {
@@ -531,11 +560,11 @@ export default function Dashboard() {
                             <div className="flex items-center gap-3 mt-0.5">
                               <span className="text-lumera-muted text-xs">{film.category_name}</span>
                               <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                film.is_published
-                                  ? "bg-green-500/15 text-green-400"
-                                  : "bg-lumera-border text-lumera-muted"
+                                film.visibility === "public"   ? "bg-green-500/15 text-green-400" :
+                                film.visibility === "unlisted" ? "bg-blue-500/15 text-blue-400"   :
+                                                                  "bg-lumera-border text-lumera-muted"
                               }`}>
-                                {film.is_published ? "Published" : "Draft"}
+                                {film.visibility === "public" ? "Public" : film.visibility === "unlisted" ? "Unlisted" : "Draft"}
                               </span>
                             </div>
                             <div className="flex items-center gap-3 mt-1 text-lumera-muted text-xs">
@@ -575,6 +604,54 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* ── Danger zone ── */}
+        <div className="mt-10 border border-red-500/20 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowDeleteZone((v) => !v)}
+            className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-red-500/5 transition-colors"
+          >
+            <div>
+              <p className="text-red-400 text-sm font-medium">Danger Zone</p>
+              <p className="text-lumera-muted text-xs mt-0.5">Permanently delete your account and all associated data.</p>
+            </div>
+            <span className="text-lumera-muted text-xs">{showDeleteZone ? "▲" : "▼"}</span>
+          </button>
+
+          {showDeleteZone && (
+            <div className="px-6 pb-6 border-t border-red-500/20">
+              <p className="text-lumera-muted text-sm mt-4 mb-4 leading-relaxed">
+                This will immediately deactivate your account and unpublish all your films. Your personal
+                data will be anonymised. This action cannot be undone.
+              </p>
+
+              {deleteError && (
+                <p className="text-red-400 text-sm mb-3">{deleteError}</p>
+              )}
+
+              <label className="block text-xs text-lumera-muted mb-2 uppercase tracking-wider">
+                Type your username to confirm
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                  placeholder="your-username"
+                  className="flex-1 bg-lumera-dark border border-red-500/30 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500/60"
+                />
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading || !deleteConfirm.trim()}
+                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold rounded transition-colors disabled:opacity-50"
+                >
+                  {deleteLoading ? "Deleting…" : "Delete Account"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )

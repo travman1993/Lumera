@@ -11,6 +11,10 @@ import Dashboard from "./pages/Dashboard"
 import NotFound from "./pages/NotFound"
 import VerifyEmailSent from "./pages/VerifyEmailSent"
 import VerifyEmail from "./pages/VerifyEmail"
+import TermsOfService from "./pages/legal/TermsOfService"
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy"
+import CreatorGuidelines from "./pages/legal/CreatorGuidelines"
+import Admin from "./pages/Admin"
 
 export default function App() {
   return (
@@ -27,6 +31,10 @@ export default function App() {
         <Route path="/upload" element={<Upload />} />
         <Route path="/upload/:id" element={<Upload />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/legal/terms" element={<TermsOfService />} />
+        <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+        <Route path="/legal/guidelines" element={<CreatorGuidelines />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

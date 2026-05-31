@@ -5,10 +5,13 @@ import {
   type Category,
   type Contributor,
   type FilmVisibility,
+  type AgreementStatus,
   getCategories,
   uploadFilm,
   updateFilm,
   getFilmById,
+  getAgreementStatus,
+  acceptAgreement,
   getToken,
 } from "../services/api"
 
@@ -18,12 +21,20 @@ export default function Upload() {
   const isEditing = !!editId
 
   useEffect(() => {
-    if (!getToken()) navigate("/login")
+    if (!getToken()) { navigate("/login"); return }
+    getAgreementStatus()
+      .then((status) => { setAgreement(status); setAgreementChecked(true) })
+      .catch(() => setAgreementChecked(true)) // on error, don't block the page
   }, [navigate])
 
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Creator Agreement gate
+  const [agreement, setAgreement] = useState<AgreementStatus | null>(null)
+  const [agreementChecked, setAgreementChecked] = useState(false)
+  const [agreementAccepting, setAgreementAccepting] = useState(false)
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -148,6 +159,71 @@ export default function Upload() {
     "w-full bg-lumera-dark border border-lumera-border rounded px-4 py-3 text-lumera-text text-sm focus:outline-none focus:border-lumera-gold placeholder:text-lumera-muted/50 transition-colors duration-250"
 
   const labelClass = "block text-2xs uppercase tracking-film text-lumera-muted mb-2"
+
+  const handleAcceptAgreement = async () => {
+    if (!agreement?.agreement_id) return
+    setAgreementAccepting(true)
+    try {
+      await acceptAgreement(agreement.agreement_id)
+      setAgreement((prev) => prev ? { ...prev, accepted: true } : prev)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to accept agreement.")
+    } finally {
+      setAgreementAccepting(false)
+    }
+  }
+
+  // Show agreement modal if we've checked and it hasn't been accepted
+  if (agreementChecked && agreement && !agreement.accepted) {
+    return (
+      <div className="pt-16 min-h-screen flex items-center justify-center px-6">
+        <div className="w-full max-w-lg bg-lumera-surface border border-lumera-border rounded-xl p-8">
+
+          <p className="label-overline text-lumera-gold mb-3">Before you upload</p>
+          <h2 className="font-display text-2xl text-white mb-4">{agreement.title ?? "Creator Agreement"}</h2>
+
+          <p className="text-lumera-muted text-sm leading-relaxed mb-6">
+            To upload and publish films on Lumera, you must accept our Creator Agreement. By accepting, you confirm that:
+          </p>
+
+          <ul className="flex flex-col gap-2.5 mb-6">
+            {[
+              "You own or have permission to use all content you upload",
+              "You are solely responsible for any copyright issues",
+              "Lumera may remove content that violates its guidelines",
+              "Repeat violations may result in account termination",
+              "You grant Lumera a license to stream and display your content",
+              "You agree to follow the Creator Guidelines",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2.5 text-sm text-lumera-muted">
+                <span className="text-lumera-gold mt-0.5 flex-shrink-0">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <p className="text-lumera-muted/60 text-xs mb-6">
+            Agreement version {agreement.version}.{" "}
+            <a href={agreement.content_url} target="_blank" rel="noreferrer" className="text-lumera-gold hover:underline">
+              Read full terms →
+            </a>
+          </p>
+
+          {error && (
+            <p className="text-red-400 text-sm mb-4">{error}</p>
+          )}
+
+          <button
+            onClick={handleAcceptAgreement}
+            disabled={agreementAccepting}
+            className="w-full py-3 bg-lumera-gold text-black font-semibold rounded hover:bg-lumera-gold-light transition-all disabled:opacity-50 text-sm"
+          >
+            {agreementAccepting ? "Accepting…" : "I Accept — Continue to Upload"}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="pt-16 min-h-screen">

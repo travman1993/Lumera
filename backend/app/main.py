@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 import os
 from pathlib import Path
 from fastapi import FastAPI
@@ -13,6 +14,7 @@ from app.api import auth, categories, creators, films, admin
 from app.models.film_report import FilmReport       # noqa: F401 — ensures table is created
 from app.models.film_like import FilmLike           # noqa: F401
 from app.models.user_report import UserReport       # noqa: F401
+from app.models.agreement import AgreementVersion, UserAgreement  # noqa: F401
 from app.services.category_service import seed_categories
 
 UPLOAD_DIR = Path("uploads")
@@ -32,7 +34,29 @@ async def lifespan(_app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     async with AsyncSessionLocal() as db:
         await seed_categories(db)
+        await _seed_agreement(db)
     yield
+
+
+async def _seed_agreement(db) -> None:
+    """Insert the v1.0 Creator Agreement if it doesn't exist yet."""
+    from sqlalchemy import select
+    from datetime import timezone
+    from app.models.agreement import AgreementVersion
+
+    result = await db.execute(
+        select(AgreementVersion).where(AgreementVersion.version == "1.0")
+    )
+    if result.scalar_one_or_none():
+        return
+
+    db.add(AgreementVersion(
+        version="1.0",
+        title="Lumera Creator Agreement",
+        content_url="https://watchlumera.com/legal/terms",
+        effective_date=datetime(2026, 6, 1, tzinfo=timezone.utc),
+    ))
+    await db.commit()
 
 
 _is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
