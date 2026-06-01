@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { Flag, Users, Film, BarChart2, CheckCircle, XCircle, EyeOff, Trash2, RotateCcw, Ban, Search } from "lucide-react"
+import { Flag, Users, Film, CheckCircle, XCircle, EyeOff, Trash2, RotateCcw, Ban, Search } from "lucide-react"
 import {
   type AdminStats,
   type AdminReport,
