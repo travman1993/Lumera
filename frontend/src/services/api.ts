@@ -469,6 +469,14 @@ export async function restoreUser(userId: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to restore user")
 }
 
+export async function adminDeleteUser(userId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/users/${userId}`, {
+    method: "DELETE",
+    headers: adminHeaders(),
+  })
+  if (!res.ok) throw new Error("Failed to delete user")
+}
+
 export async function getAdminFilms(): Promise<AdminFilm[]> {
   const res = await fetch(`${BASE_URL}/admin/films`, { headers: adminHeaders() })
   if (!res.ok) throw new Error("Failed to load films")

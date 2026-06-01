@@ -240,6 +240,24 @@ async def restore_user(
     return {"message": f"User @{user.username} restored."}
 
 
+@router.delete("/users/{user_id}", status_code=204)
+async def admin_delete_user(
+    user_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await _require_admin(credentials, db)
+    if str(admin.id) == str(user_id):
+        raise HTTPException(status_code=403, detail="Cannot delete your own account.")
+    user = await get_user_by_id(db, str(user_id))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if user.is_admin:
+        raise HTTPException(status_code=403, detail="Cannot delete an admin account.")
+    await db.delete(user)
+    await db.commit()
+
+
 # ── Dashboard stats ───────────────────────────────────────────────────────────
 
 @router.get("/stats")

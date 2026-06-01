@@ -13,6 +13,7 @@ import {
   getAdminUsers,
   suspendUser,
   restoreUser,
+  adminDeleteUser,
   getAdminFilms,
   adminUnpublishFilm,
   adminDeleteFilm,
@@ -101,6 +102,12 @@ export default function Admin() {
   const handleRestore = async (userId: string) => {
     await restoreUser(userId)
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_active: true } : u))
+  }
+
+  const handleDeleteUser = async (user: AdminUser) => {
+    if (!window.confirm(`Permanently delete @${user.username}? This cannot be undone.`)) return
+    await adminDeleteUser(user.id)
+    setUsers((prev) => prev.filter((u) => u.id !== user.id))
   }
 
   const handleUnpublish = async (filmId: string) => {
@@ -363,6 +370,13 @@ export default function Admin() {
                                 <RotateCcw size={14} />
                               </button>
                             )}
+                            <button
+                              onClick={() => handleDeleteUser(u)}
+                              title="Delete user"
+                              className="text-lumera-muted hover:text-red-400 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         )}
                       </td>
