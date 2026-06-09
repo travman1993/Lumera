@@ -14,6 +14,7 @@ import VerifyEmail from "./pages/VerifyEmail"
 import TermsOfService from "./pages/legal/TermsOfService"
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy"
 import CreatorGuidelines from "./pages/legal/CreatorGuidelines"
+import DMCA from "./pages/legal/DMCA"
 import Admin from "./pages/Admin"
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/legal/terms" element={<TermsOfService />} />
         <Route path="/legal/privacy" element={<PrivacyPolicy />} />
         <Route path="/legal/guidelines" element={<CreatorGuidelines />} />
+        <Route path="/legal/dmca" element={<DMCA />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Route>

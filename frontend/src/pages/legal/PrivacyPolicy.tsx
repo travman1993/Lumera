@@ -114,6 +114,7 @@ export default function PrivacyPolicy() {
         <div className="mt-12 pt-8 border-t border-lumera-border flex gap-6 text-xs text-lumera-muted">
           <Link to="/legal/terms" className="hover:text-lumera-gold transition-colors">Terms of Service</Link>
           <Link to="/legal/guidelines" className="hover:text-lumera-gold transition-colors">Creator Guidelines</Link>
+          <Link to="/legal/dmca" className="hover:text-lumera-gold transition-colors">DMCA</Link>
           <Link to="/" className="hover:text-white transition-colors ml-auto">Back to Lumera</Link>
         </div>
 
